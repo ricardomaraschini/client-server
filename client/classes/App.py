@@ -3,6 +3,7 @@ from ClientID import ClientID
 import threading
 import random
 import time
+import os
 
 class App:
 
@@ -23,9 +24,19 @@ class App:
 		pos = random.getrandbits(1)
 		return operations[pos]
 
-	def set_spool_dir(self, d):
-		self.client_id.set_spool_dir(d)
+	def prepare_spool_directory(self):
+		spool_dir = "%s/../spool" % os.path.dirname(os.path.abspath(__file__))
 
+		if os.path.exists(spool_dir) == False:
+			os.mkdir(spool_dir)
+			self.client_id.set_spool_dir(spool_dir)
+			return
+
+		if os.path.isdir(spool_dir) == False:
+			raise Exception("spoll directory is not a directory")
+
+		self.client_id.set_spool_dir(spool_dir)
+		
 	def set_server_addr(self, addr):
 		self.requester.set_server_addr(addr)
 
@@ -52,6 +63,7 @@ class App:
 	start threads
 	"""
 	def run(self):
+		self.prepare_spool_directory()
 		self.requester.set_id(self.client_id.get_free_id())
 		self.get_initial_value()
 		self.increment_worker = threading.Thread(target=self.increment_loop)
