@@ -15,7 +15,6 @@ class App:
 		self.base_value = 0
 		self.client_id = ClientID()
 
-	
 	"""
 	randomically choose an operation, returns either
 	odd or even
@@ -62,6 +61,8 @@ class App:
 				self.increment = self.base_value = int(self.requester.do_req(msg))
 				print "last value from server: %s" % self.base_value
 			except:
+				# give the cpu a break
+				time.sleep(0.1)
 				continue
 			break
 	
