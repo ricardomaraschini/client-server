@@ -36,8 +36,7 @@ class ClientID:
 		newid_file = "%s/%s" % (self.spool_dir, self.id)
 		self.fd = open(newid_file, "w+")
 		fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-		return self.id
-
+		return "%s" % self.id
 
 	def stop(self):
 		if self.fd == None:
