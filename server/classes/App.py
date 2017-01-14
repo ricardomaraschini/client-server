@@ -1,3 +1,4 @@
+from NumbersRepo import NumbersRepo
 from Gateway import Gateway
 from Worker import Worker
 from Logger import Logger
@@ -6,6 +7,7 @@ import time
 class App:
 
 	def __init__(self):
+		self.numbers_repo = NumbersRepo()
 		self.gateway = Gateway()
 		self.logger = Logger()
 		self.num_workers = 1
@@ -35,6 +37,7 @@ class App:
 		for i in range(0, self.num_workers):
 			worker = Worker()
 			worker.set_id(i)
+			worker.set_numbers_repo(self.numbers_repo)
 			worker.run()
 			self.workers.append(worker)
 

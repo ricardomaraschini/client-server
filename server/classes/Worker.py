@@ -1,12 +1,14 @@
-import zmq
 import threading
 import socket
+import json
+import zmq
 
 class Worker:
 
 	def __init__(self):
 		self.id = 0
 		self.hang = False
+		self.numbers_repo = False
 		self.port = self.find_open_port()
 		self.context = zmq.Context()
 		self.socket = self.context.socket(zmq.REP)
@@ -17,6 +19,12 @@ class Worker:
 
 		self.socket.bind("tcp://127.0.0.1:%s" % self.port)
 		self.worker_thread = None
+
+	"""
+	where we fetch the next numbers from, odd or even
+	"""
+	def set_numbers_repo(self, n):
+		self.numbers_repo = n
 
 	"""
 	returns the address this worker has choosen to bind
@@ -59,12 +67,39 @@ class Worker:
 	def loop(self):
 		while self.hang == False:
 			try:
-				message = self.socket.recv()
-				self.socket.send("%s" % self.id)
+				msg_data = json.loads(self.socket.recv())
 			except (zmq.error.Again, zmq.error.ZMQError) as e:
-				pass
+				continue
 			except:
 				raise
+
+			result = self.process_message(msg_data)
+			self.socket.send(result)
+
+	"""
+	process a message
+	"""
+	def process_message(self, msg_data):
+		if "id" not in msg_data:
+			return "nack"
+
+		if "payload" not in msg_data:
+			return "nack"
+		
+		payload = msg_data["payload"]
+		if "operation" not in payload:
+			return "nack"
+
+		if "data" not in payload:
+			return "nack"
+
+		if payload["operation"] == "inc":
+			return "ack"
+			
+		if payload["operation"] == "last":
+			return "%s" % self.numbers_repo.get_last(msg_data["id"], payload["data"])
+
+		return "%s" % self.numbers_repo.get_new(msg_data["id"], payload["data"])
 
 	"""
 	sets the time to die flag to true so worker knows
