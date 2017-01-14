@@ -1,4 +1,5 @@
 from Requester import Requester
+from ClientID import ClientID
 import threading
 import random
 import time
@@ -10,6 +11,8 @@ class App:
 		self.requester = Requester()
 		self.increment = 0
 		self.base_value = 0
+		self.client_id = ClientID()
+
 	
 	"""
 	randomically choose an operation, returns either
@@ -20,8 +23,8 @@ class App:
 		pos = random.getrandbits(1)
 		return operations[pos]
 
-	def set_spool_dir(self, dir):
-		pass
+	def set_spool_dir(self, d):
+		self.client_id.set_spool_dir(d)
 
 	def set_server_addr(self, addr):
 		self.requester.set_server_addr(addr)
@@ -37,7 +40,8 @@ class App:
 	retrieve a value to start with
 	"""
 	def get_initial_value(self):
-		while True:
+		op = self.rand_op()
+		while self.hang == False:
 			try:
 				self.base_value = int(self.requester.do_req(op))
 			except:
@@ -48,7 +52,7 @@ class App:
 	start threads
 	"""
 	def run(self):
-
+		self.requester.set_id(self.client_id.get_free_id())
 		self.get_initial_value()
 		self.increment_worker = threading.Thread(target=self.increment_loop)
 		self.request_worker = threading.Thread(target=self.request_loop)
@@ -60,6 +64,7 @@ class App:
 
 		self.increment_worker.join()
 		self.request_worker.join()
+		self.client_id.stop()
 
 	"""
 	sleeps a random time between 3 and 5 seconds, then do a request
