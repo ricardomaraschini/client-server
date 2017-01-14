@@ -32,10 +32,24 @@ class App:
 	def stop(self):
 		self.hang = True
 
+
+	"""
+	retrieve a value to start with
+	"""
+	def get_initial_value(self):
+		while True:
+			try:
+				self.base_value = int(self.requester.do_req(op))
+			except:
+				continue
+			break
+	
 	"""
 	start threads
 	"""
 	def run(self):
+
+		self.get_initial_value()
 		self.increment_worker = threading.Thread(target=self.increment_loop)
 		self.request_worker = threading.Thread(target=self.request_loop)
 		self.request_worker.start()
@@ -44,8 +58,8 @@ class App:
 		while self.hang == False:
 			time.sleep(1)
 
-		#self.increment_worker.join()
-		#self.request_worker.join()
+		self.increment_worker.join()
+		self.request_worker.join()
 
 	"""
 	sleeps a random time between 3 and 5 seconds, then do a request
@@ -55,13 +69,13 @@ class App:
 	def request_loop(self):
 
 		while self.hang == False:
+			#time.sleep(random.randint(3,5))
+			time.sleep(10)
 			op = self.rand_op()
 			try:
 				self.base_value = int(self.requester.do_req(op))
 			except:
 				continue
-			#time.sleep(random.randint(3,5))
-			time.sleep(10)
 		
 
 	"""
