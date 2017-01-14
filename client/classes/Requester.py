@@ -1,4 +1,5 @@
 import socket
+import json
 import zmq
 
 class Requester:
@@ -41,8 +42,14 @@ class Requester:
 		socket.setsockopt(zmq.RCVTIMEO, self.timeout * 1000)
 		socket.setsockopt(zmq.IDENTITY, self.id)
 		socket.connect(endpoint)
+
+		data = {}
+		data["id"] = self.id
+		data["payload"] = msg
+		serial_data = json.dumps(data)
+
 		try:
-			socket.send(msg)
+			socket.send(serial_data)
 			message = socket.recv()
 		except:
 			socket.close()
