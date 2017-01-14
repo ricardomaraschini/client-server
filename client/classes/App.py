@@ -3,6 +3,7 @@ from ClientID import ClientID
 import threading
 import random
 import time
+import json
 import os
 
 class App:
@@ -51,10 +52,15 @@ class App:
 	retrieve a value to start with
 	"""
 	def get_initial_value(self):
-		op = self.rand_op()
+
+		msg = {}
+		msg["operation"] = "last"
+		msg["data"] = self.rand_op()
+
 		while self.hang == False:
 			try:
-				self.base_value = int(self.requester.do_req(op))
+				self.increment = self.base_value = int(self.requester.do_req(msg))
+				print "last value from server: %s" % self.base_value
 			except:
 				continue
 			break
@@ -86,11 +92,14 @@ class App:
 	def request_loop(self):
 
 		while self.hang == False:
-			#time.sleep(random.randint(3,5))
-			time.sleep(10)
-			op = self.rand_op()
+			time.sleep(random.randint(3,5))
+
+			msg = {}
+			msg["operation"] = "new"
+			msg["data"] = self.rand_op()
 			try:
-				self.base_value = int(self.requester.do_req(op))
+				self.base_value = int(self.requester.do_req(msg))
+				print "%s value requested, return: %s" % (msg["data"], self.base_value)
 			except:
 				continue
 		
@@ -112,8 +121,14 @@ class App:
 
 			# keep trying in case of failure!
 			while self.hang == False:
+
+				msg = {}
+				msg["operation"] = "inc"
+				msg["data"] = self.increment
+
 				try:
-					self.requester.do_req("%s" % self.increment)
+					self.requester.do_req(msg)
+					print "value sent to server: %s" % msg["data"]
 				except:
 					# give the cpu a break
 					time.sleep(0.1)
