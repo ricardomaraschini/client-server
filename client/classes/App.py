@@ -17,13 +17,20 @@ class App:
 
 	"""
 	randomically choose an operation, returns either
-	odd or even
+	`odd' or `even' string
 	"""
 	def rand_op(self):
 		operations = ["even", "odd"]
 		pos = random.getrandbits(1)
 		return operations[pos]
 
+	"""
+	as every process running on the same machine is
+	a different client we have to have different ids
+	per process. see ClientID class for further details.
+	here we assure we create a spool directory where
+	we are going to store different ids
+	"""
 	def prepare_spool_directory(self):
 		spool_dir = "%s/../spool" % os.path.dirname(os.path.abspath(__file__))
 
@@ -43,12 +50,16 @@ class App:
 	def set_server_port(self, p):
 		self.requester.set_server_port(p)
 
+	"""
+	sets the time to die flag so the main thread
+	stops its work
+	"""
 	def stop(self):
 		self.hang = True
 
-
 	"""
-	retrieve a value to start with
+	retrieve from the server value to start the
+	increment process
 	"""
 	def get_initial_value(self):
 
@@ -56,6 +67,10 @@ class App:
 		msg["operation"] = "last"
 		msg["data"] = self.rand_op()
 
+		# we desperately need this value, so we
+		# are going to be annoying and keep poking
+		# the server until we get this value or
+		# the time to die arrives
 		while self.hang == False:
 			try:
 				self.increment = self.base_value = int(self.requester.do_req(msg))
@@ -67,7 +82,9 @@ class App:
 			break
 	
 	"""
-	start threads
+	start threads. one for keep requesting a new value every 3-5
+	seconds and the other to do the increment on the retrieved
+	value
 	"""
 	def run(self):
 		self.prepare_spool_directory()
@@ -86,9 +103,9 @@ class App:
 		self.client_id.stop()
 
 	"""
-	sleeps a random time between 3 and 5 seconds, then do a request
-	for a new value from the server, update it on the property and
-	sleeps again. the operation(odd or even) is randomic
+	sleeps for a random time between 3 and 5 seconds, then do a request
+	for a new value from the server, update it on the `base_value' property
+	and sleeps again. the request(odd or even) is randomic
 	"""
 	def request_loop(self):
 
@@ -106,26 +123,32 @@ class App:
 		
 
 	"""
-	increments an internal counter at evey 0.5 secons and sends the
+	increments an internal counter at evey 0.5 seconds and sends the
 	result to the server. everytime the base value changes we start
 	incrementing from its new value
 	"""
 	def increment_loop(self):
+
 		inivalue = self.base_value
 		while self.hang == False:
 			time.sleep(0.5)
+
+			# we retrieved a new valud
 			if inivalue != self.base_value:
 				inivalue = self.base_value
 				self.increment = self.base_value
 
+			# self.increment++ ;-)
 			self.increment = self.increment + 1
 
-			# keep trying in case of failure!
-			while self.hang == False:
+			msg = {}
+			msg["operation"] = "inc"
+			msg["data"] = self.increment
 
-				msg = {}
-				msg["operation"] = "inc"
-				msg["data"] = self.increment
+			# sends the increment value to the
+			# the server. in case of failure we
+			# keep trying
+			while self.hang == False:
 
 				try:
 					self.requester.do_req(msg)

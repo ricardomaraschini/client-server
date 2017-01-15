@@ -32,14 +32,24 @@ class Requester:
 	"""
 	sends `msg' to server through a req socket. sets client
 	identity to what is in `id' property, timeout is set to
-	what is on `timeout' property
+	what is on `timeout' property. here is the thing: i have
+	not been able to access the zmq.IDENTITY behind the server
+	ROUTER -> DEALER schema, so we are going to be redundant
+	and send the id together on the json message. we set the
+	zmq.IDENTITY socket option anyways as it is used by the
+	logger. this is the right place for improvements
 	"""
 	def do_req(self, msg):
 		endpoint = "tcp://%s:%s" % (self.srv_addr, self.srv_port)
 
 		socket = self.context.socket(zmq.REQ)
 		socket.setsockopt(zmq.LINGER, False)
+
+		# we don't lock the system, if a retry is
+		# needed they are going to ask ourselves to
+		# try again
 		socket.setsockopt(zmq.RCVTIMEO, self.timeout * 1000)
+
 		socket.setsockopt(zmq.IDENTITY, self.id)
 		socket.connect(endpoint)
 
