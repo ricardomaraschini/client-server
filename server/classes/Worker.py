@@ -126,7 +126,7 @@ class Worker:
 	"""
 	def wait_for_thread(self):
 
-		if sel.hang == False:
+		if self.hang == False:
 			raise Exception("wait() prior to stop(), what are you doing?")
 
 

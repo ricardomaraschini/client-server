@@ -52,7 +52,7 @@ class Logger:
 	just waits to join the main logger thread
 	"""
 	def wait_for_thread(self):
-		if sel.hang == False:
+		if self.hang == False:
 			raise Exception("wait() prior to stop(), what are you doing?")
 
 		if self.logger_thread == None:
