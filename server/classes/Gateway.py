@@ -7,25 +7,25 @@ import zmq
 class Gateway:
 
 	"""
-	the gateway spreads the messages from client to workers
+	the gateway forwards the messages from client to workers
 	and at the same time publish all transactions on a pub
-	socket so logger can do its job
+	socket so logger can show the message content on its
+	stdin
 	"""
 	def __init__(self):
 		self.hang = False
 		self.monitor = devices.ThreadMonitoredQueue(zmq.ROUTER, zmq.DEALER, zmq.PUB)
-		self.monitor.bind_in("tcp://*:4444")
+		self.monitor.bind_in("tcp://*:1234")
 		self.monitor.bind_mon("tcp://127.0.0.1:4445")
 
 	"""
-	connects to the workers on localhost
+	adds a worker endpoint to backend socket
 	"""
-	def connect_to_workers(self, workers):
-		for worker in workers:
-			self.monitor.connect_out(worker.get_bind_address())
+	def add_worker_endpoint(self, ep):
+		self.monitor.connect_out(ep)
 
 	"""
-	dispatches an eternal loop thread
+	creates the main thread
 	"""
 	def run(self):
 		self.worker_thread = threading.Thread(target=self.loop)
@@ -34,14 +34,16 @@ class Gateway:
 	"""
 	as monitor already runs on a separated thread, this
 	thread only waits to be joined at the end of the
-	process
+	process. eventually on the future we may have extra
+	tasks in here but that is all for now
 	"""
 	def loop(self):
 		self.monitor.start()
 
 	"""
-	joins the workers thread that is like doing nothing
+	joins the main thread. as the main thread is just a
+	placeholder for future improvements this should exit
+	as soon as it is called
 	"""
 	def stop(self):
 		self.worker_thread.join()
-

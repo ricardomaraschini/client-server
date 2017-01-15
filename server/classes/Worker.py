@@ -21,7 +21,8 @@ class Worker:
 		self.worker_thread = None
 
 	"""
-	where we fetch the next numbers from, odd or even
+	sets the place where we fetch the next numbers from, 
+	odd or even
 	"""
 	def set_numbers_repo(self, n):
 		self.numbers_repo = n
@@ -34,7 +35,9 @@ class Worker:
 
 	"""
 	every worker has an id so we can check if the jobs
-	are being distribuited as we expect they are
+	are being distribuited as we expect they are. this
+	function was used during debug process but it may
+	eventually be useful on the future
 	"""
 	def set_id(self, id):
 		self.id = id
@@ -52,7 +55,7 @@ class Worker:
 		return port
 
 	"""
-	starts the worker thread
+	starts the main worker thread
 	"""
 	def run(self):
 		self.worker_thread = threading.Thread(target=self.loop)
@@ -61,8 +64,8 @@ class Worker:
 
 	"""
 	loops over received messages and respond with the
-	desired number(odd or even). if `hang' is true it
-	is time to die so we finish the thread
+	desired number(odd or even). if `hang' is true we
+	are done and it is time to die
 	"""
 	def loop(self):
 		while self.hang == False:
@@ -77,7 +80,8 @@ class Worker:
 			self.socket.send(result)
 
 	"""
-	process a message
+	get the message, validates it and return an 
+	appropriate response string
 	"""
 	def process_message(self, msg_data):
 		if "id" not in msg_data:
@@ -93,27 +97,39 @@ class Worker:
 		if "data" not in payload:
 			return "nack"
 
+		# what are we supposed to do with the
+		# messages clients have send with the
+		# increment? nothing for now
 		if payload["operation"] == "inc":
 			return "ack"
-			
+		
+		# returns the last value sent to the
+		# client. if we received this message
+		# one client as stopped and started
+		# again
 		if payload["operation"] == "last":
 			return "%s" % self.numbers_repo.get_last(msg_data["id"], payload["data"])
 
+		# generates a new random odd or even number
 		return "%s" % self.numbers_repo.get_new(msg_data["id"], payload["data"])
 
 	"""
-	sets the time to die flag to true so worker knows
-	it is able to stop its loop thread
+	sets the time to die flag to true
 	"""
 	def stop(self):
 		self.hang = True
 
 	"""
-	do a join() on the loop thread, lets assure any
+	do a join() on the loop thread so we assure any
 	pending message got an appropriate answer. also
 	destroys zmq socket and context
 	"""
 	def wait_for_thread(self):
+
+		if sel.hang == False:
+			raise Exception("wait() prior to stop(), what are you doing?")
+
+
 		if self.worker_thread == None:
 			return
 

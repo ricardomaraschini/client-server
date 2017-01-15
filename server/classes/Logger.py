@@ -12,7 +12,7 @@ class Logger:
 		self.socket.setsockopt(zmq.SUBSCRIBE, "")
 
 		# this timeout is important so we can detect
-		# an end signal(self.hang = True)
+		# an end signal(self.hang = true)
 		self.socket.setsockopt(zmq.RCVTIMEO, 1000)
 
 	"""
@@ -24,7 +24,8 @@ class Logger:
 
 
 	"""
-	keep the logger running
+	keep the logger running, printing all messages
+	to stdin. stops when self.hang = true
 	"""
 	def loop(self):
 		while self.hang == False:
@@ -41,12 +42,19 @@ class Logger:
 
 	"""
 	sets the time to die flag to true so logger knows
-	it is able to stop its loop thread
+	know it is time to gently die
 	"""
 	def stop(self):
 		self.hang = True
 
+	"""
+	loop thread stops when hang = true. this method
+	just waits to join the main logger thread
+	"""
 	def wait_for_thread(self):
+		if sel.hang == False:
+			raise Exception("wait() prior to stop(), what are you doing?")
+
 		if self.logger_thread == None:
 			return
 

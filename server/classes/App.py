@@ -21,7 +21,8 @@ class App:
 		self.num_workers = w
 
 	"""
-	sets the time to hang flag flag
+	sets the time to hang flag flag. when hang
+	is true we stop everything
 	"""
 	def stop(self):
 		self.hang = True
@@ -50,7 +51,9 @@ class App:
 
 		self.logger.run()
 		self.start_workers()
-		self.gateway.connect_to_workers(self.workers)
+		for w in self.workers:
+			self.gateway.add_worker_endpoint(w.get_bind_address())
+
 		self.gateway.run()
 
 		# wait for time to hang signal
@@ -64,6 +67,7 @@ class App:
 		self.logger.stop()
 
 		# forwards the signal to all workers
+		# so they can have a clean stop
 		for worker in self.workers:
 			worker.stop()
 
