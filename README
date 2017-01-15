@@ -1,28 +1,87 @@
-             ,_____________________________________________,
-             |                                             |
-             |                   SERVER                    |
-             |                                             |
-             |                                             |
-,________,   |    ,___,           ,___,        ,________,  |
-| client | -----> |   |           |   | -----> | worker |  |
-`--------'   |    |   |           |   |        `--------'  |
-             |    | R | --------> | D |                    |
-,________,   |    | O |           | E |        ,________,  |
-| client | -----> | U | <-------- | A | -----> | worker |  |
-`--------'   |    | T |           | L |        `--------'  |
-             |    | E |           | E |                    |
-,________,   |    | R |-----------, R |        ,________,  |
-| client | -----> |   |    PUB    |   | -----> | worker |  |
-`--------'   |    `---'-----------'---'        `--------'  |
-             |              ^                              |
-             |              |                              |
-             |              |                              |
-             |          ,________,         _.........._    |
-             |          | logger | -----> | |  log   | |   |
-             |          `--------'        | |________| |   |
-             |                            |   ______   |   |
-             |                            |  |    | |  |   |
-             |                            |__|____|_|__|   |
-             |                                             |
-             `---------------------------------------------'
+[SERVER]
+
+On local machine using Debian 8:
+
+$ apt-get install -y python-zmq
+$ cd server
+$ ./server.py
+
+Logs will be printed on stdin
+
+[CLIENT]
+
+On local machine using Debian 8:
+
+$ apt-get install -y python-zmq
+$ cd client
+$ ./client.py -s <SERVER IP ADDRESS>
+
+Logs will be printed on stdin
+
+
+[SERVER ARCHITECTURE]
+
+
+             ,_____________________________________________________,
+             |                                                     |
+             |                       SERVER                        |
+             |                                                     |
+             |         ,_________________________,                 |
+             |         |                         |                 |
+             |         |         GATEWAY         |                 |
+             |         |                         |                 |
+,________,   |         |  ,___,           ,___,  |     ,________,  |
+| client | -------------> |   |           |   | -----> | worker |  |
+`--------'   |         |  |   |           |   |  |     `--------'  |
+             |         |  | R | --------> | D |  |                 |
+,________,   |         |  | O |           | E |  |     ,________,  |
+| client | -------------> | U | <-------- | A | -----> | worker |  |
+`--------'   |         |  | T |           | L |  |     `--------'  |
+             |         |  | E |           | E |  |                 |
+,________,   |         |  | R |-----------, R |  |     ,________,  |
+| client | -------------> |   |    PUB    |   | -----> | worker |  |
+`--------'   |         |  `---'-----------'---'  |     `--------'  |
+     .       |         |            ^            |         .       |
+     .       |         |            |            |         .       |
+     .       |          `-----------|------------'         .       |
+             |                      |                              |
+             |                  ,________,                         |         
+             |                  | logger |                         |
+             |                  `--------'                         |       
+             |                                                     |
+             `-----------------------------------------------------'
+
+
+[SERVER PORTS]
+
+- Gateway router binds to port 1234
+- Gateway PUB binds to port 4445
+- Workers bind to any port they want
+
+
+[OTHER INFO]
+
+- System accepts any number of wokers, for now it is hardcoded to four
+	- See server.py to increase or decrease the number of workers
+- Logger prints all messages to stdin
+- Workers share a common instance of NumberRepo class, where the numbers
+  are generated and stored
+- Every client uses an uuid as its identificator
+- Multiple client process running on the same machine will operate with
+  different uuids, in other words, they will be treated as distinct clients
+	- If a given client stops and restarts it will search for already
+	  used but free uuid and use them. This assures the operation resume
+
+
+[ABOUT THE CLIENT ID]
+
+All operations below are happening on the same machine and on the given order:
+
+1. client0 starts and looks for an unused uuid, no one exists so it creates
+   one and allocates to itself
+2. client1 starts and looks for an unused uuid, no one exists as the previous
+   is being used by client0 so it creates a new one and allocates to itself
+3. client0 stops deallocating its uuid
+4. client0 starts again, looks for an unused uuid, finds one and uses it,
+   resuming where it stopped before
 
